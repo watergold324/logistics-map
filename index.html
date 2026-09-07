@@ -966,6 +966,30 @@ sq.addEventListener('input', function() {
     var k = r.date + '|' + r.route + '|' + r.variety;
     if (!seen[k]) { seen[k] = 1; routeList.push(r); }
   });
+  // 双地点 → 线路：查询里同时含两个厂名（顺序不限）时，直接找两地间的线路
+  var pairHits = [];
+  (function() {
+    var names = [];
+    allPts.forEach(function(g) {
+      g.getAttribute('data-names').split('、').forEach(function(n) {
+        if (n && n.length >= 2 && names.indexOf(n) < 0) names.push(n);
+      });
+    });
+    names.sort(function(a, b) { return b.length - a.length; });
+    var matched = [];
+    names.forEach(function(n) { if (matched.length < 2 && q.indexOf(n) >= 0) matched.push(n); });
+    if (matched.length === 2) {
+      var A = matched[0], B = matched[1];
+      var seenP = {};
+      ROUTES.forEach(function(r) {
+        var ends = routeEnds(r.route);
+        if ((ends[0] === A && ends[1] === B) || (ends[0] === B && ends[1] === A)) {
+          var kp = r.date + '|' + r.route;
+          if (!seenP[kp]) { seenP[kp] = 1; pairHits.push(r); }
+        }
+      });
+    }
+  })();
   // 地点命中：优先"公司/厂名"级（点选只亮该厂线路），否则城市级（弹同城公司列表）
   var compHits = [], cityHits = [];
   allPts.forEach(function(g) {
@@ -981,16 +1005,18 @@ sq.addEventListener('input', function() {
   ROUTES.forEach(function(r) {
     if (r.logistics && r.logistics.indexOf(q) >= 0 && logis.indexOf(r.logistics) < 0) logis.push(r.logistics);
   });
-  var any = routeList.length > 0 || placeHits.length > 0 || logis.length > 0;
+  var any = routeList.length > 0 || pairHits.length > 0 || placeHits.length > 0 || logis.length > 0;
   if (!any) {
     sresults.innerHTML = '<div class="sr none">无匹配结果</div>';
   } else {
-    routeList.slice(0, 8).forEach(function(r) {
+    var dispList = pairHits.concat(routeList);
+    dispList.slice(0, 10).forEach(function(r) {
       var item = document.createElement('div');
       item.className = 'sr';
       item.style.color = '#0B7285';
       item.textContent = '🚛 ' + shortDate(r.date) + ' ' + r.variety + ' ' + r.route +
-        (r.price ? '（' + r.price + '元/吨）' : '') + (r.ton ? '　' + r.ton + (r.tunit === '车' ? '车' : '吨') : '');
+        (r.price ? '（' + r.price + '元/吨）' : '') + (r.ton ? '　' + r.ton + (r.tunit === '车' ? '车' : '吨') : '') +
+        (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '');
       item.addEventListener('click', function() {
         highlightRoute(r.route);
         sresults.style.display = 'none';
