@@ -980,8 +980,11 @@ sq.addEventListener('input', function() {
       var item = document.createElement('div');
       item.className = 'sr';
       if (ph.name) {
-        // 公司级命中：直接只亮该厂
+        // 公司级命中：直接只亮该厂（红=发货地 蓝=收货地 紫=又发又收）
         item.textContent = '🏭 ' + ph.name + '（' + cityOf(ph.name) + '）';
+        var _hO = !!(CO_CNT[ph.name] && CO_CNT[ph.name].out);
+        var _hI = !!(CO_CNT[ph.name] && CO_CNT[ph.name].in);
+        item.style.color = (_hO && _hI) ? '#9C36B5' : (_hO ? '#E03131' : '#1971C2');
         item.addEventListener('click', function() {
           highlightCompany(ph.name);
           zoomToPts([ph.g]);
