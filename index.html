@@ -10,6 +10,7 @@
   #wrap { position:relative; width:100vw; height:100vh; overflow:hidden; background:#F7F9FC; }
   #svg { width:100%; height:100%; display:block; cursor:grab; overflow:hidden; }
   #svg.dragging { cursor:grabbing; }
+  #svg { touch-action:none; }
   .prov { font-size:9.5px; fill:#8A94A6; text-anchor:middle; dominant-baseline:middle;
             paint-order:stroke; stroke:#fff; stroke-width:1.5px; user-select:none; }
   .route { transition:stroke-width .12s; cursor:pointer; }
@@ -73,6 +74,8 @@
 
   /* ===== 手机适配（2026-09-07 新增） ===== */
   @media only screen and (max-width: 700px) {
+    html, body, #wrap { touch-action:none; overscroll-behavior:none; }
+    #suggest, #info, #citypick-list { touch-action:pan-y; }
     #wrap { height:100vh; height:100dvh; }
     body { -webkit-text-size-adjust:100%; }
     #searchbox { left:10px; top:10px; width:calc(100vw - 20px); max-width:none; }
@@ -254,6 +257,86 @@ window.addEventListener('mouseup', function() {
   }
 });
 var suppressClick = false;
+
+// 触屏手势：单指拖动=平移；双指揽合=缩放（只改 viewBox，UI 面板保持不动不放大）
+var touches = {};
+var gesture = null;
+function touchDist() {
+  var ids = Object.keys(touches);
+  var a = touches[ids[0]], b = touches[ids[1]];
+  return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+}
+function touchMid() {
+  var ids = Object.keys(touches);
+  var a = touches[ids[0]], b = touches[ids[1]];
+  return {x:(a.x+b.x)/2, y:(a.y+b.y)/2};
+}
+svg.addEventListener('touchstart', function(e) {
+  for (var i=0;i<e.changedTouches.length;i++) {
+    var t = e.changedTouches[i];
+    touches[t.identifier] = {x:t.clientX, y:t.clientY};
+  }
+  var ids = Object.keys(touches);
+  if (ids.length === 1) {
+    var t0 = touches[ids[0]];
+    gesture = {kind:'pan', sx:t0.x, sy:t0.y, x:vb.x, y:vb.y, moved:false};
+    svg.classList.add('dragging');
+  } else if (ids.length === 2) {
+    svg.classList.remove('dragging');
+    gesture = {kind:'pinch', d0:touchDist(), m0:touchMid(), x0:vb.x, y0:vb.y, w0:vb.w, h0:vb.h};
+  }
+}, {passive:false});
+svg.addEventListener('touchmove', function(e) {
+  if (!gesture) return;
+  e.preventDefault();
+  for (var i=0;i<e.changedTouches.length;i++) {
+    var t = e.changedTouches[i];
+    if (touches[t.identifier]) { touches[t.identifier].x = t.clientX; touches[t.identifier].y = t.clientY; }
+  }
+  var rect = svg.getBoundingClientRect();
+  var ids = Object.keys(touches);
+  if (gesture.kind === 'pan' && ids.length === 1) {
+    var c = touches[ids[0]];
+    var dxp = c.x - gesture.sx, dyp = c.y - gesture.sy;
+    if (dxp*dxp + dyp*dyp > 16) gesture.moved = true;
+    vb.x = gesture.x - dxp / rect.width * vb.w;
+    vb.y = gesture.y - dyp / rect.height * vb.h;
+    applyVB();
+  } else if (gesture.kind === 'pinch' && ids.length === 2) {
+    var d = touchDist();
+    if (d < 5) return;
+    var f = d / gesture.d0;
+    var nw = Math.min(Math.max(gesture.w0 / f, MINW), VB_W0);
+    var nh = nw * gesture.h0 / gesture.w0;
+    var pm = {x: (gesture.m0.x - rect.left) / rect.width * gesture.w0 + gesture.x0,
+              y: (gesture.m0.y - rect.top) / rect.height * gesture.h0 + gesture.y0};
+    var mid = touchMid();
+    vb.x = pm.x - (mid.x - rect.left) / rect.width * nw;
+    vb.y = pm.y - (mid.y - rect.top) / rect.height * nh;
+    vb.w = nw; vb.h = nh;
+    applyVB();
+  }
+}, {passive:false});
+function endTouch(e) {
+  for (var i=0;i<e.changedTouches.length;i++) {
+    var t = e.changedTouches[i];
+    delete touches[t.identifier];
+  }
+  var ids = Object.keys(touches);
+  if (ids.length === 1) {
+    var r = touches[ids[0]];
+    gesture = {kind:'pan', sx:r.x, sy:r.y, x:vb.x, y:vb.y, moved:gesture ? gesture.moved : false};
+  } else if (ids.length === 0) {
+    if (gesture && gesture.kind === 'pan' && gesture.moved) {
+      suppressClick = true;
+      setTimeout(function() { suppressClick = false; }, 50);
+    }
+    gesture = null;
+    svg.classList.remove('dragging');
+  }
+}
+svg.addEventListener('touchend', endTouch);
+svg.addEventListener('touchcancel', endTouch);
 
 // 详情浮层
 // 详情卡片：所有 info.innerHTML= / info.style.display= 统一走这里，自动带“收起”头
