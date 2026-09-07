@@ -642,7 +642,8 @@ function showCompanyInfo(name) {
   html += '<tr><td class="k">收货</td><td>' + list.filter(function(r){return r.route.endsWith('→ '+name)}).length + ' 次</td></tr>';
   list.forEach(function(r) {
     html += '<tr><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
-      (r.price ? '（' + r.price + '元/吨）' : '') + '</td></tr>';
+      (r.price ? '（' + r.price + '元/吨）' : '') +
+      (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
   });
   html += '</table>';
   info.innerHTML = html;
@@ -965,16 +966,22 @@ sq.addEventListener('input', function() {
     var k = r.date + '|' + r.route + '|' + r.variety;
     if (!seen[k]) { seen[k] = 1; routeList.push(r); }
   });
-  // 地点命中
-  var hits = allPts.filter(function(g) {
-    return g.getAttribute('data-names').split('、').some(function(n) { return n.indexOf(q) >= 0; });
+  // 地点命中：优先"公司/厂名"级（点选只亮该厂线路），否则城市级（弹同城公司列表）
+  var compHits = [], cityHits = [];
+  allPts.forEach(function(g) {
+    var ns = g.getAttribute('data-names').split('、');
+    ns.forEach(function(n) {
+      if (n.indexOf(q) >= 0 && compHits.filter(function(h){return h.name === n}).length === 0) compHits.push({name:n, g:g});
+    });
+    if (ns.some(function(n) { return n.indexOf(q) >= 0; })) cityHits.push(g);
   });
+  var placeHits = compHits.length ? compHits : cityHits;
   // 物流公司命中（去重）
   var logis = [];
   ROUTES.forEach(function(r) {
     if (r.logistics && r.logistics.indexOf(q) >= 0 && logis.indexOf(r.logistics) < 0) logis.push(r.logistics);
   });
-  var any = routeList.length > 0 || hits.length > 0 || logis.length > 0;
+  var any = routeList.length > 0 || placeHits.length > 0 || logis.length > 0;
   if (!any) {
     sresults.innerHTML = '<div class="sr none">无匹配结果</div>';
   } else {
@@ -991,15 +998,27 @@ sq.addEventListener('input', function() {
       });
       sresults.appendChild(item);
     });
-    hits.slice(0, 6).forEach(function(g) {
+    placeHits.slice(0, 8).forEach(function(ph) {
       var item = document.createElement('div');
       item.className = 'sr';
-      item.textContent = '📍 ' + g.getAttribute('data-names').split('、').join('、');
-      item.addEventListener('click', function() {
-        focusPlace(g);
-        sresults.style.display = 'none';
-        sq.blur();
-      });
+      if (ph.name) {
+        // 公司级命中：直接只亮该厂
+        item.textContent = '🏭 ' + ph.name + '（' + cityOf(ph.name) + '）';
+        item.addEventListener('click', function() {
+          highlightCompany(ph.name);
+          zoomToPts([ph.g]);
+          showCompanyInfo(ph.name);
+          sresults.style.display = 'none';
+          sq.blur();
+        });
+      } else {
+        item.textContent = '📍 ' + ph.getAttribute('data-names').split('、').join('、');
+        item.addEventListener('click', function() {
+          focusPlace(ph);
+          sresults.style.display = 'none';
+          sq.blur();
+        });
+      }
       sresults.appendChild(item);
     });
     logis.slice(0, 6).forEach(function(l) {
@@ -1079,7 +1098,8 @@ function highlightLogistics(logi) {
   html += '<tr><td class="k">总运费</td><td>' + totalFee + ' 元</td></tr>';
   list.forEach(function(r) {
     html += '<tr><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
-      (r.price ? '（' + r.price + '元/吨）' : '') + '</td></tr>';
+      (r.price ? '（' + r.price + '元/吨）' : '') +
+      (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
   });
   html += '</table>';
   info.innerHTML = html;
