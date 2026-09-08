@@ -564,7 +564,7 @@ function highlightCompany(name) {
         (others[c] = others[c] || []).push(other);
       }
     } else {
-      l.style.opacity = '0.12';
+      l.style.opacity = '0.05';
     }
   });
   var selfRole = (CO_CNT[name] && CO_CNT[name].out) ? 'origin' : 'dest';
@@ -600,7 +600,7 @@ function highlightCompany(name) {
       var cntEl3 = g.querySelector('.cnt');
       if (cntEl3) cntEl3.textContent = countBetween(name, rel);
     } else {
-      g.style.opacity = '0.15';
+      g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
     }
   });
@@ -678,7 +678,7 @@ function highlightCity(namesArr) {
       var other = nameSet[ends[0]] ? ends[1] : ends[0];
       if (other) others[cityOf(other)] = 1;
     } else {
-      l.style.opacity = '0.12';
+      l.style.opacity = '0.05';
     }
   });
   allPts.forEach(function(g) {
@@ -696,7 +696,7 @@ function highlightCity(namesArr) {
       if (mk) { mk.style.stroke = markerStroke(g); mk.style.strokeWidth = '2.2'; }
       if (lb) lb.style.display = 'block';
     } else {
-      g.style.opacity = '0.15';
+      g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
     }
   });
@@ -718,8 +718,8 @@ var allLines = Array.prototype.slice.call(document.querySelectorAll('.route'));
 var allPts = Array.prototype.slice.call(document.querySelectorAll('.pt'));
 
 // 常态：线 + 收货地虚化，发货地常驻
-var DIM_LINE = '0.15';
-var DIM_DEST = '0.25';
+var DIM_LINE = '0.06';
+var DIM_DEST = '0.10';
 // ---- z-order（自上而下）：亮图标 > 亮线 > 未亮图标 > 未亮线 ----
 var _lastCityKey = null;
 function _isOn(el) { return el.style.opacity === '1'; }
@@ -798,7 +798,7 @@ function highlightPlace(namesArr, triggerType) {
       l.style.strokeWidth = '1.3';
       l.style.opacity = '1';
     } else {
-      l.style.opacity = '0.12';
+      l.style.opacity = '0.05';
     }
   });
   allPts.forEach(function(g) {
@@ -1072,7 +1072,7 @@ function highlightLogistics(logi) {
       (relCities[c0] = relCities[c0] || {out: [], in: []}).out.push(ends[0]);
       (relCities[c1] = relCities[c1] || {out: [], in: []}).in.push(ends[1]);
     } else {
-      l.style.opacity = '0.12';
+      l.style.opacity = '0.05';
     }
   });
   allPts.forEach(function(g) {
@@ -1103,7 +1103,7 @@ function highlightLogistics(logi) {
       if (mk) { mk.style.stroke = markerStroke(g); mk.style.strokeWidth = '2.2'; }
       if (lb) { var lab = []; outN.concat(inN).forEach(function(n) { if (lab.indexOf(n) < 0) lab.push(n); }); lb.textContent = lab.join('、') || (g.getAttribute('data-city') || ''); lb.style.display = 'block'; }
     } else {
-      g.style.opacity = '0.15';
+      g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
     }
   });
@@ -1144,7 +1144,7 @@ function highlightRoute(routeStr) {
       l.style.strokeWidth = '2.2';
       l.style.opacity = '1';
     } else {
-      l.style.opacity = '0.08';
+      l.style.opacity = '0.04';
     }
   });
   if (!r0) return;
@@ -1163,7 +1163,7 @@ function highlightRoute(routeStr) {
         lb.style.display = 'block';
       }
     } else {
-      g.style.opacity = '0.15';
+      g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
     }
   });
