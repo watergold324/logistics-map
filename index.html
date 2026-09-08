@@ -56,6 +56,7 @@
   #info table { border-collapse:collapse; }
   #info td { padding:2px 8px 2px 0; }
   #info .rt-click { cursor:pointer; }
+  #info .rg-head td { cursor:pointer; background:#F1F3F5; font-weight:600; }
   #info .rt-click:hover { background:#E7F5FF; }
   #info .k { color:#868E96; }
   #tip { position:absolute; left:50%; top:12px; transform:translateX(-50%);
@@ -631,6 +632,34 @@ function highlightCompany(name) {
 }
 
 // 公司详情：该公司的全部路线
+function groupRows(list, useFull) {
+  var groups = {};
+  list.forEach(function(r) { (groups[r.route] = groups[r.route] || []).push(r); });
+  var h = '';
+  Object.keys(groups).forEach(function(rt) {
+    var arr = groups[rt], r0 = arr[0];
+    var sub = '';
+    arr.forEach(function(r) {
+      var idx = useFull ? FULL_ROUTES.indexOf(r) : ROUTES.indexOf(r);
+      sub += '<tr class="rg-sub rt-click" onclick="' + (useFull ? 'rowClickF(' + idx + ')' : 'rowClick(' + idx + ')') + '"><td class="k">' + r.date + '</td><td>' + r.variety +
+        (r.ton ? '　' + r.ton + (r.tunit === '车' ? '车' : '吨') : '') +
+        (r.price ? '　' + r.price + '元/吨' : '') +
+        (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
+    });
+    var txt = rt + '　' + arr.length + ' 趟' + (r0.dist ? '　约' + r0.dist + (r0.dunit === '实际' ? '公里' : '公里(直线)') : '');
+    h += '<tr class="rg-head"><td class="k" colspan="2" data-txt="' + txt + '" onclick="toggleGroup(this)"><span class="rg-ic">▸</span> ' + txt + '</td></tr>' + sub;
+  });
+  return h;
+}
+function toggleGroup(td) {
+  var tr = td.parentNode;
+  var on = tr.classList.toggle('rg-open');
+  var ic = td.querySelector('.rg-ic');
+  if (ic) ic.textContent = on ? '▾' : '▸';
+  var n = tr.nextElementSibling;
+  while (n && n.classList.contains('rg-sub')) { n.style.display = on ? '' : 'none'; n = n.nextElementSibling; }
+}
+
 function showCompanyInfo(name) {
   var list = FULL_ROUTES.filter(function(r) {
     return r.route.startsWith(name + ' →') || r.route.endsWith('→ ' + name);
@@ -638,11 +667,7 @@ function showCompanyInfo(name) {
   var html = '<h4>' + name + '（' + cityOf(name) + '）</h4><table>';
   html += '<tr><td class="k">发货</td><td>' + list.filter(function(r){return r.route.startsWith(name+' →')}).length + ' 次</td></tr>';
   html += '<tr><td class="k">收货</td><td>' + list.filter(function(r){return r.route.endsWith('→ '+name)}).length + ' 次</td></tr>';
-  list.forEach(function(r) {
-    html += '<tr class="rt-click" onclick="rowClickF(' + FULL_ROUTES.indexOf(r) + ')"><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
-      (r.price ? '（' + r.price + '元/吨）' : '') +
-      (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
-  });
+  html += groupRows(list, true);
   html += '</table>';
   info.innerHTML = html;
   info.style.display = 'block';
@@ -1138,11 +1163,7 @@ function highlightLogistics(logi) {
   html += '<tr><td class="k">线路</td><td>' + routes + ' 条</td></tr>';
     var _sum = []; if (totalTon) _sum.push(totalTon + ' 吨'); if (totalTruck) _sum.push(totalTruck + ' 车'); html += '<tr><td class="k">总吨位</td><td>' + (_sum.join(' + ') || '—') + '</td></tr>';
   html += '<tr><td class="k">总运费</td><td>' + totalFee + ' 元</td></tr>';
-  list.forEach(function(r) {
-    html += '<tr class="rt-click" onclick="rowClick(' + ROUTES.indexOf(r) + ')"><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
-      (r.price ? '（' + r.price + '元/吨）' : '') +
-      (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
-  });
+  html += groupRows(list, false);
   html += '</table>';
   info.innerHTML = html;
   info.style.display = 'block';
