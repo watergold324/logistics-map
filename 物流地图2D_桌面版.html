@@ -1154,7 +1154,10 @@ function highlightRoute(routeStr) {
       g.style.opacity = '1';
       var mk = g.querySelector('.marker');
       if (mk) { mk.style.stroke = markerStroke(g); mk.style.strokeWidth = '2.2'; }
-      if (lb) lb.style.display = 'block';
+      if (lb) {
+        lb.textContent = ns.filter(function(n) { return n === ends[0] || n === ends[1]; }).join('、');
+        lb.style.display = 'block';
+      }
     } else {
       g.style.opacity = '0.15';
       if (lb) lb.style.display = 'none';
