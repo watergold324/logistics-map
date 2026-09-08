@@ -59,6 +59,8 @@
   #info h4 { font-size:15px; margin-bottom:6px; }
   #info table { border-collapse:collapse; }
   #info td { padding:2px 8px 2px 0; }
+  #info .rt-click { cursor:pointer; }
+  #info .rt-click:hover { background:#E7F5FF; }
   #info .k { color:#868E96; }
   #tip { position:absolute; left:50%; top:12px; transform:translateX(-50%);
             background:rgba(0,0,0,.65); color:#fff; padding:6px 14px; border-radius:16px;
@@ -377,6 +379,13 @@ function showRoute(i) {
     '<tr><td class="k">总运费</td><td>' + (r.total || '—') + ' 元</td></tr></table>';
   info.style.display = 'block';
 }
+function rowClick(i) {
+  var r = ROUTES[i];
+  if (!r) return;
+  highlightRoute(r.route);
+  showRoute(i);
+}
+
 function showPoint(names, type) {
   var t = type === 'origin' ? '发货地' : '收货地';
   var html = '<h4>' + t + '：' + names.join('、') + '</h4><table>';
@@ -641,7 +650,7 @@ function showCompanyInfo(name) {
   html += '<tr><td class="k">发货</td><td>' + list.filter(function(r){return r.route.startsWith(name+' →')}).length + ' 次</td></tr>';
   html += '<tr><td class="k">收货</td><td>' + list.filter(function(r){return r.route.endsWith('→ '+name)}).length + ' 次</td></tr>';
   list.forEach(function(r) {
-    html += '<tr><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
+    html += '<tr class="rt-click" onclick="rowClick(' + ROUTES.indexOf(r) + ')"><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
       (r.price ? '（' + r.price + '元/吨）' : '') +
       (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
   });
@@ -1126,7 +1135,7 @@ function highlightLogistics(logi) {
     var _sum = []; if (totalTon) _sum.push(totalTon + ' 吨'); if (totalTruck) _sum.push(totalTruck + ' 车'); html += '<tr><td class="k">总吨位</td><td>' + (_sum.join(' + ') || '—') + '</td></tr>';
   html += '<tr><td class="k">总运费</td><td>' + totalFee + ' 元</td></tr>';
   list.forEach(function(r) {
-    html += '<tr><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
+    html += '<tr class="rt-click" onclick="rowClick(' + ROUTES.indexOf(r) + ')"><td class="k">' + r.date + '</td><td>' + r.variety + ' ' + r.route +
       (r.price ? '（' + r.price + '元/吨）' : '') +
       (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
   });
