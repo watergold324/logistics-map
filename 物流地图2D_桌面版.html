@@ -619,7 +619,7 @@ function groupRows(list, useFull) {
     var sub = '';
     arr.forEach(function(r) {
       var idx = useFull ? FULL_ROUTES.indexOf(r) : ROUTES.indexOf(r);
-      sub += '<tr class="rg-sub rt-click" onclick="' + (useFull ? 'rowClickF(' + idx + ')' : 'rowClick(' + idx + ')') + '"><td class="k">' + r.date + '</td><td>' + r.variety +
+      sub += '<tr class="rg-sub rt-click" style="display:none" onclick="' + (useFull ? 'rowClickF(' + idx + ')' : 'rowClick(' + idx + ')') + '"><td class="k">' + r.date + '</td><td>' + r.variety +
         (r.ton ? '　' + r.ton + (r.tunit === '车' ? '车' : '吨') : '') +
         (r.price ? '　' + r.price + '元/吨' : '') +
         (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '') + '</td></tr>';
