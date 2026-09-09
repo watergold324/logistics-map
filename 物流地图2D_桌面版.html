@@ -590,13 +590,13 @@ function highlightCompany(name) {
       if (cntEl2) {
         cntEl2.textContent = lineCount(name, selfRole === 'origin');
       }
-      if (lb) lb.textContent = name;
+      if (lb) { lb.textContent = g.getAttribute('data-city') || name; }
     } else if (hit) {
       g.style.opacity = '1';
       // 对端城市点：按场景角色切换图形（选中发货->对端变蓝圆；选中收货->对端变红三角），不加橙色描边
       setCityMarker(g, otherRole);
       g.setAttribute('data-picked', '1');
-      if (lb) { lb.textContent = rel.join('、'); lb.style.display = 'block'; }
+      if (lb) { lb.textContent = g.getAttribute('data-city') || ''; lb.style.display = 'block'; }
       // 对端数字 = 选中公司与对端公司之间的实际发货次数
       var cntEl3 = g.querySelector('.cnt');
       if (cntEl3) cntEl3.textContent = countBetween(name, rel);
@@ -1126,7 +1126,7 @@ function highlightLogistics(logi) {
       }
       var mk = g.querySelector('.marker');
       if (mk) { mk.style.stroke = markerStroke(g); mk.style.strokeWidth = '2.2'; }
-      if (lb) { var lab = []; outN.concat(inN).forEach(function(n) { if (lab.indexOf(n) < 0) lab.push(n); }); lb.textContent = lab.join('、') || (g.getAttribute('data-city') || ''); lb.style.display = 'block'; }
+      if (lb) { lb.textContent = g.getAttribute('data-city') || ''; lb.style.display = 'block'; }
     } else {
       g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
@@ -1179,10 +1179,7 @@ function highlightRoute(routeStr) {
       g.style.opacity = '1';
       var mk = g.querySelector('.marker');
       if (mk) { mk.style.stroke = markerStroke(g); mk.style.strokeWidth = '2.2'; }
-      if (lb) {
-        lb.textContent = ns.filter(function(n) { return n === ends[0] || n === ends[1]; }).join('、');
-        lb.style.display = 'block';
-      }
+      if (lb) { lb.textContent = g.getAttribute('data-city') || ''; lb.style.display = 'block'; }
     } else {
       g.style.opacity = '0.06';
       if (lb) lb.style.display = 'none';
