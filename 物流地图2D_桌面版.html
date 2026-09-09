@@ -72,6 +72,26 @@
 </style>
 </head>
 <body>
+<div id="pwdgate" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;">
+  <div style="font-size:18px;color:#495057;margin-bottom:14px;">🔒 请输入访问密码</div>
+  <input id="pwdin" type="password" style="padding:8px 12px;font-size:16px;border:1px solid #DEE2E6;border-radius:6px;width:220px;" autocomplete="off">
+  <div id="pwderr" style="color:#E03131;font-size:13px;margin-top:8px;display:none;">密码不对，再试试</div>
+</div>
+<script>
+(function() {
+  var P = 'eWl5b25n';
+  var gate = document.getElementById('pwdgate'), inp = document.getElementById('pwdin'), err = document.getElementById('pwderr');
+  function tryP() {
+    var ok = false;
+    try { ok = (atob(P) === inp.value.trim()); } catch (e) { ok = false; }
+    if (ok) { gate.style.display = 'none'; }
+    else { err.style.display = 'block'; inp.select(); }
+  }
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { tryP(); } });
+  document.addEventListener('click', function(e) { if (e.target && e.target.id === 'pwdin') { e.stopPropagation(); } });
+  setTimeout(function() { inp.focus(); }, 60);
+})();
+</script>
 <div id="wrap">
   <div id="searchbox">
     <input id="sq" placeholder="🔍 搜地点/公司/物流/线路，如 9.2 一车大豆粉">
