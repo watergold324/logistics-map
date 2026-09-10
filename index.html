@@ -664,7 +664,7 @@ function showCompanyInfo(name) {
   var list = FULL_ROUTES.filter(function(r) {
     return r.route.startsWith(name + ' →') || r.route.endsWith('→ ' + name);
   });
-  var html = '<h4>' + name + '（' + cityOf(name) + '）</h4><table>';
+  var html = '<h4>' + name + '（' + (PLACE_CITY[name] || '未上图') + '）</h4><table>';
   html += '<tr><td class="k">发货</td><td>' + list.filter(function(r){return r.route.startsWith(name+' →')}).length + ' 次</td></tr>';
   html += '<tr><td class="k">收货</td><td>' + list.filter(function(r){return r.route.endsWith('→ '+name)}).length + ' 次</td></tr>';
   html += groupRows(list, true);
@@ -982,7 +982,7 @@ function searchRoutes(q) {
   var vterms = varietyTerms(q);
   var tonOne = /(一|1)车/.test(q);
   if (!dates.length && !vterms.length && !tonOne) return [];
-  return ROUTES.filter(function(r) {
+  return FULL_ROUTES.filter(function(r) {
     if (!dateMatch(r.date, dates)) return false;
     if (vterms.length && !vterms.some(function(v) { return r.variety && r.variety.indexOf(v) >= 0; })) return false;
     if (tonOne && !(r.ton && r.ton >= 33 && r.ton <= 35)) return false;
@@ -1008,8 +1008,9 @@ sq.addEventListener('input', function() {
   var pairHits = [];
   (function() {
     var names = [];
-    allPts.forEach(function(g) {
-      g.getAttribute('data-names').split('、').forEach(function(n) {
+    FULL_ROUTES.forEach(function(r) {
+      var e2 = routeEnds(r.route);
+      [e2[0], e2[1]].forEach(function(n) {
         if (n && n.length >= 2 && names.indexOf(n) < 0) names.push(n);
       });
     });
@@ -1019,7 +1020,7 @@ sq.addEventListener('input', function() {
     if (matched.length === 2) {
       var A = matched[0], B = matched[1];
       var seenP = {};
-      ROUTES.forEach(function(r) {
+      FULL_ROUTES.forEach(function(r) {
         var ends = routeEnds(r.route);
         if ((ends[0] === A && ends[1] === B) || (ends[0] === B && ends[1] === A)) {
           var kp = r.date + '|' + r.route;
@@ -1030,10 +1031,17 @@ sq.addEventListener('input', function() {
   })();
   // 地点命中：优先"公司/厂名"级（点选只亮该厂线路），否则城市级（弹同城公司列表）
   var compHits = [], cityHits = [];
+  var _seenName = {};
+  FULL_ROUTES.forEach(function(r) {
+    var e3 = routeEnds(r.route);
+    [e3[0], e3[1]].forEach(function(n) {
+      if (n && n.indexOf(q) >= 0 && !_seenName[n]) { _seenName[n] = 1; compHits.push({name:n, g:null}); }
+    });
+  });
   allPts.forEach(function(g) {
     var ns = g.getAttribute('data-names').split('、');
     ns.forEach(function(n) {
-      if (n.indexOf(q) >= 0 && compHits.filter(function(h){return h.name === n}).length === 0) compHits.push({name:n, g:g});
+      compHits.forEach(function(x) { if (x.name === n) x.g = g; });
     });
     if (ns.some(function(n) { return n.indexOf(q) >= 0; })) cityHits.push(g);
   });
@@ -1056,7 +1064,7 @@ sq.addEventListener('input', function() {
         (r.price ? '（' + r.price + '元/吨）' : '') + (r.ton ? '　' + r.ton + (r.tunit === '车' ? '车' : '吨') : '') +
         (r.dist ? '　约' + r.dist + (r.dunit === '实际' ? '公里' : '公里(直线)') : '');
       item.addEventListener('click', function() {
-        highlightRoute(r.route);
+        rowClickF(FULL_ROUTES.indexOf(r));
         sresults.style.display = 'none';
         sq.blur();
       });
@@ -1067,13 +1075,16 @@ sq.addEventListener('input', function() {
       item.className = 'sr';
       if (ph.name) {
         // 公司级命中：直接只亮该厂（红=发货地 蓝=收货地 紫=又发又收）
-        item.textContent = '🏭 ' + ph.name + '（' + cityOf(ph.name) + '）';
+        var _mapped = !!PLACE_CITY[ph.name];
+        item.textContent = '🏭 ' + ph.name + (_mapped ? '（' + PLACE_CITY[ph.name] + '）' : '（未上图）');
         var _hO = !!(CO_CNT[ph.name] && CO_CNT[ph.name].out);
         var _hI = !!(CO_CNT[ph.name] && CO_CNT[ph.name].in);
         item.style.color = (_hO && _hI) ? '#9C36B5' : (_hO ? '#E03131' : '#1971C2');
         item.addEventListener('click', function() {
-          highlightCompany(ph.name);
-          zoomToPts([ph.g]);
+          if (_mapped) {
+            highlightCompany(ph.name);
+            if (ph.g) zoomToPts([ph.g]);
+          }
           showCompanyInfo(ph.name);
           sresults.style.display = 'none';
           sq.blur();
