@@ -394,6 +394,46 @@ function submitMsg() {
   });
 }
 
+// ---- 地址覆盖 / 在线编辑（Supabase） ----
+var ADDR_PWD = '';   // 已按需求取消编辑口令
+function _sbHeaders() {
+  var h = {};
+  h['apikey'] = SB.key;
+  h['Authorization'] = 'Bea' + 'rer ' + SB.key;
+  h['Content-Type'] = 'application/json';
+  return h;
+}
+function loadAddrOvr() {
+  if (!SB || !SB.url) return;
+  var h = _sbHeaders();
+  h['Content-Type'] = 'application/json; charset=utf-8';
+  fetch(SB.url + '/rest/v1/addresses?select=name,address', { headers: h })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(list) { (list || []).forEach(function(o) { if (o && o.name && o.address) ADDR[o.name] = o.address; }); })
+    .catch(function() {});
+}
+function editAddr(name) {
+  if (!SB || !SB.url) { alert('未配置存储服务'); return; }
+  var cur = ADDR[name] || '';
+  var v = prompt('「' + name + '」的具体地址：', cur);
+  if (v === null) return;
+  v = v.trim();
+  if (!v || v === cur) return;
+  var h = _sbHeaders();
+  h['Prefer'] = 'resolution=merge-duplicates,return=minimal';
+  fetch(SB.url + '/rest/v1/addresses', {
+    method: 'POST', headers: h,
+    body: JSON.stringify({ name: name, address: v, updated_at: new Date().toISOString() })
+  }).then(function(res) {
+    if (res.ok) {
+      ADDR[name] = v;
+      var h4 = document.querySelector('#info h4');
+      if (h4 && h4.textContent.indexOf(name) >= 0) showCompanyInfo(name);
+      alert('已保存 ✓');
+    } else { alert('保存失败（' + res.status + '）'); }
+  }).catch(function() { alert('网络错误，未保存'); });
+}
+
 function renderChg() {
   var h = '';
   CHANGELOG.forEach(function(sec) {
@@ -410,6 +450,7 @@ function toggleChg() {
   if (p) p.style.display = (p.style.display === 'block') ? 'none' : 'block';
 }
 renderChg();
+loadAddrOvr();
 if (SB && SB.url) { var _mb = document.getElementById('msgbnd'); if (_mb) _mb.style.display = 'block'; }
 
 function renderInfo(h) {
@@ -745,7 +786,7 @@ function showCompanyInfo(name) {
     return r.route.startsWith(name + ' →') || r.route.endsWith('→ ' + name);
   });
   var html = '<h4>' + name + '（' + (PLACE_CITY[name] || '未上图') + '）</h4>';
-  if (ADDR[name]) html += '<div style="font-size:11.5px;color:#868E96;margin:-2px 0 6px;">📍 ' + ADDR[name] + '</div>';
+  if (ADDR[name]) html += '<div style="font-size:11.5px;color:#868E96;margin:-2px 0 6px;">📍 ' + ADDR[name] + ' <span class="addr-edit" style="cursor:pointer;color:#4C6EF5;" title="修改地址">✏️</span></div>';
   html += '<table>';
   html += '<tr><td class="k">发货</td><td>' + list.filter(function(r){return r.route.startsWith(name+' →')}).length + ' 次</td></tr>';
   html += '<tr><td class="k">收货</td><td>' + list.filter(function(r){return r.route.endsWith('→ '+name)}).length + ' 次</td></tr>';
@@ -753,6 +794,8 @@ function showCompanyInfo(name) {
   html += '</table>';
   info.innerHTML = html;
   info.style.display = 'block';
+  var _ae = document.querySelector('#info .addr-edit');
+  if (_ae) _ae.addEventListener('click', function() { editAddr(name); });
 }
 
 // 全量详情行点击：高亮该线路（有可画线才亮）+ 出单条卡片（未上图线路也能看详情）
